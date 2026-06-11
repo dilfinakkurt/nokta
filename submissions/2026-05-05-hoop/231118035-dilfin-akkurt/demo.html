@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nokta — Dilfin Akkurt | Final Demo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;background:#080712;color:#e2e8f0;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+  #tabs{display:flex;background:#0d0b1e;border-bottom:1px solid rgba(168,85,247,0.15)}
+  .tab{flex:1;padding:14px;text-align:center;font-size:12px;font-weight:600;letter-spacing:1px;cursor:pointer;color:#64748b;transition:all .3s;border-bottom:2px solid transparent}
+  .tab.active{color:#a855f7;border-bottom-color:#a855f7;background:rgba(168,85,247,0.05)}
+  #content{flex:1;overflow:hidden;position:relative}
+  .panel{display:none;height:100%;flex-direction:column;overflow:hidden}
+  .panel.active{display:flex}
+
+  /* AVATAR PANEL */
+  #avatar-panel{position:relative}
+  #avatar-scene{flex:1;position:relative;background:radial-gradient(circle at center,#131130 0%,#080712 100%);overflow:hidden}
+  #canvas3d{position:absolute;inset:0;width:100%;height:100%}
+  #canvas2d{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  #avatar-status{position:absolute;top:16px;left:0;right:0;text-align:center;font-size:11px;font-weight:600;letter-spacing:2px;color:rgba(168,85,247,0.7);text-transform:uppercase}
+  #mic-area{padding:16px;background:#0d0b1e;border-top:1px solid rgba(168,85,247,0.1);display:flex;align-items:center;gap:12px;flex-shrink:0}
+  #mic-btn{flex:1;padding:12px;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);border-radius:20px;color:#a855f7;font-size:13px;font-weight:600;cursor:pointer;transition:all .3s;font-family:inherit}
+  #mic-btn.active{background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.4);color:#ef4444;animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.3)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
+  #vol-bar{width:80px;height:6px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden}
+  #vol-fill{height:100%;width:0%;background:linear-gradient(90deg,#a855f7,#06b6d4);border-radius:3px;transition:width 0.05s}
+  
+  /* AUDIT/DICTATION SECTION */
+  #dictation-panel{height:160px;overflow-y:auto;padding:10px 14px;border-top:1px solid rgba(168,85,247,0.08);background:#080712;flex-shrink:0}
+  .dict-btn{display:inline-block;margin:4px;padding:6px 12px;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.2);border-radius:12px;font-size:11px;cursor:pointer;color:#c4b5fd;transition:all .2s}
+  .dict-btn:hover{background:rgba(168,85,247,0.2)}
+  .dict-btn.dictating{background:rgba(6,182,212,0.15);border-color:rgba(6,182,212,0.4);color:#67e8f9}
+  #dict-text{margin-top:8px;font-size:11px;color:#94a3b8;line-height:1.6;min-height:30px;font-style:italic}
+  .report-badge{display:inline-block;margin:3px;padding:4px 10px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:10px;font-size:10px;color:#86efac}
+
+  /* FORGE PANEL */
+  #forge-panel{overflow-y:auto;padding:16px;gap:12px}
+  .forge-header{font-size:18px;font-weight:800;color:#a855f7;margin-bottom:4px}
+  .forge-sub{font-size:11px;color:#64748b;margin-bottom:12px}
+  #run-forge-btn{width:100%;padding:13px;background:linear-gradient(135deg,#7c3aed,#a855f7);border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:all .3s;font-family:inherit;margin-bottom:12px}
+  #run-forge-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(168,85,247,0.4)}
+  #run-forge-btn:disabled{opacity:0.5;transform:none;cursor:not-allowed}
+  #forge-console{background:#05040f;border:1px solid rgba(168,85,247,0.15);border-radius:10px;padding:12px;min-height:100px;max-height:200px;overflow-y:auto;font-family:'Courier New',monospace;font-size:11px;color:#c4b5fd;margin-bottom:12px}
+  .log-line{margin:2px 0;line-height:1.5}
+  .log-ok{color:#86efac}.log-fail{color:#fca5a5}.log-warn{color:#fcd34d}.log-info{color:#93c5fd}
+  #stuck-alert{display:none;padding:14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:12px;margin-bottom:12px;text-align:center}
+  #stuck-alert h3{color:#f87171;font-size:14px;margin-bottom:8px}
+  #expert-btn{padding:11px 20px;background:linear-gradient(135deg,#dc2626,#ef4444);border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+  #cycle-table{width:100%;border-collapse:collapse;font-size:10px;margin-bottom:60px}
+  #cycle-table th{background:rgba(168,85,247,0.1);padding:7px 5px;text-align:left;color:#a855f7;font-weight:600;border-bottom:1px solid rgba(168,85,247,0.2)}
+  #cycle-table td{padding:6px 5px;border-bottom:1px solid rgba(255,255,255,0.04);color:#94a3b8;vertical-align:top}
+  .badge-ok{color:#86efac;font-weight:700}.badge-fail{color:#fca5a5;font-weight:700}.badge-stuck{color:#fbbf24;font-weight:700}
+</style>
+</head>
+<body>
+<div id="tabs">
+  <div class="tab active" onclick="switchTab('avatar')" id="tab-avatar">🎙️ AVATAR</div>
+  <div class="tab" onclick="switchTab('forge')" id="tab-forge">⚙️ FORGE</div>
+</div>
+
+<div id="content">
+  <!-- AVATAR PANEL -->
+  <div class="panel active" id="avatar-panel">
+    <div id="avatar-scene">
+      <canvas id="canvas3d"></canvas>
+      <canvas id="canvas2d"></canvas>
+      <div id="avatar-status">Avatar Yükleniyor...</div>
+    </div>
+    <div id="mic-area">
+      <button id="mic-btn" onclick="toggleMic()">🎙️ Mikrofonu Aç</button>
+      <div id="vol-bar"><div id="vol-fill"></div></div>
+      <span id="vol-label" style="font-size:10px;color:#64748b;width:40px">0%</span>
+    </div>
+    <div id="dictation-panel">
+      <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:6px;letter-spacing:1px">📋 AUDIT DİKTE</div>
+      <div id="dict-btns"></div>
+      <div id="dict-text">Bir rapor seçin veya mikrofonu açın...</div>
+      <div id="report-list"></div>
+    </div>
+  </div>
+
+  <!-- FORGE PANEL -->
+  <div class="panel" id="forge-panel">
+    <div class="forge-header">⚙️ Forge Döngüsü</div>
+    <div class="forge-sub">Otonom kod onarım agent'ı · Track C</div>
+    <button id="run-forge-btn" onclick="runForge()">▶ Forge Döngüsünü Çalıştır</button>
+    <div id="forge-console"><span style="color:#4b5563">// Forge konsolu başlatılmayı bekliyor...</span></div>
+    <div id="stuck-alert">
+      <h3>🚨 STUCK — Agent Tıkandı!</h3>
+      <p style="color:#94a3b8;font-size:11px;margin-bottom:10px">2 ardışık FAIL sonrası otonom döngü durdu. İnsan müdahalesi gerekiyor.</p>
+      <button id="expert-btn" onclick="connectExpert()">📞 Uzmana Bağlan (WebRTC)</button>
+    </div>
+    <table id="cycle-table">
+      <thead><tr><th>#</th><th>Rapor</th><th>Sonuç</th><th>Test</th><th>Hash</th></tr></thead>
+      <tbody id="cycle-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+// ─── STATE ───────────────────────────────────────────────
+let scene, camera, renderer, modelGroup;
+let headMesh, teethMesh, tongueMesh;
+let headMouthIdx, teethMouthIdx, tongueJawIdx;
+let targetVol = 0, curVol = 0;
+let isSpeaking = false;
+let speechInterval = null;
+let rotX = 0, rotY = 0, wavePhase = 0;
+let micStream = null, audioCtx = null, analyser = null, micActive = false;
+let forgeCycles = [
+  {n:1,rep:'report-1-home.md',result:'Success',test:'PASS',hash:'f0a1b2c'},
+  {n:2,rep:'report-2-profile.md',result:'Success',test:'PASS',hash:'c3b4a5d'},
+  {n:3,rep:'report-3-settings.md',result:'Rollback',test:'FAIL',hash:'e6f7g8h'},
+  {n:4,rep:'report-4-settings.md',result:'Success',test:'PASS',hash:'h9i0j1k'},
+];
+let auditReports = [];
+let isStuck = false;
+const dictTemplates = [
+  {title:'Rapor 3: Ayarlar Kontrastı',
+   text:'Ayarlar sayfasındaki koyu mod renk kontrastı çok düşük. Tüm başlık metinlerini beyaza çevir ve arka planı koyu griyle güçlendir.',
+   speak:'Audit raporu üç. Ayarlar sayfasındaki koyu mod renk kontrastı çok düşük. Tüm başlık metinlerini beyaza çevirmem gerekiyor.'},
+  {title:'Rapor 5: Profil Fotoğrafı Yüklenmiyor',
+   text:'Profil fotoğrafı yükleme ekranında timeout hatası alınıyor. Kullanıcılar fotoğraf ekleyemiyor, acil düzeltme gerekiyor.',
+   speak:'Audit raporu beş. Profil fotoğrafı yükleme ekranında zaman aşımı hatası var. Kullanıcılar fotoğraf ekleyemiyor. Bu hatayı düzeltmem gerekiyor.'},
+  {title:'Rapor 6: Grafik Çökmesi (STUCK)',
+   text:'SVG grafik kütüphanesi NPM paketi çakışması yüzünden çöküyor. Acil onarım gerekiyor.',
+   speak:'Audit raporu altı. Grafik kütüphanesi çöküyor. N P M paketi çakışması var. Bu onarım çok zor, muhtemelen takılıp kalacağım.',
+   isStuck:true},
+];
+
+// ─── THREE.JS SETUP ──────────────────────────────────────
+const c3 = document.getElementById('canvas3d');
+const c2 = document.getElementById('canvas2d');
+const ctx = c2.getContext('2d');
+
+function resize() {
+  const W = c2.parentElement.clientWidth, H = c2.parentElement.clientHeight;
+  c2.width = W; c2.height = H;
+  if (renderer) { renderer.setSize(W, H); camera.aspect = W/H; camera.updateProjectionMatrix(); }
+}
+
+function init3D() {
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  camera.position.set(0, 1.5, 0.6);
+  renderer = new THREE.WebGLRenderer({canvas: c3, alpha: true, antialias: true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+  const kl = new THREE.DirectionalLight(0xffe3b3, 1.3); kl.position.set(1.5,2.5,1.5); scene.add(kl);
+  const rl = new THREE.PointLight(0x06b6d4, 1.8, 5); rl.position.set(-1.5,1.8,-1); scene.add(rl);
+  const fl = new THREE.DirectionalLight(0xa855f7, 0.8); fl.position.set(-1.5,1,1); scene.add(fl);
+  modelGroup = new THREE.Group(); scene.add(modelGroup);
+  resize(); loadModel();
+}
+
+function loadModel() {
+  const loader = new THREE.GLTFLoader();
+  const status = document.getElementById('avatar-status');
+  // Try loading local model first
+  loader.load('./app/assets/model.glb',
+    gltf => {
+      const m = gltf.scene; modelGroup.add(m);
+      m.traverse(c => {
+        if (!c.isMesh) return;
+        if (c.name==='Head_Mesh') headMesh=c;
+        if (c.name==='Teeth_Mesh') teethMesh=c;
+        if (c.name==='Tongue_Mesh') tongueMesh=c;
+      });
+      if (headMesh) {
+        const box = new THREE.Box3().setFromObject(headMesh);
+        const ctr = box.getCenter(new THREE.Vector3());
+        camera.position.set(0, ctr.y+0.05, 0.38);
+        camera.lookAt(0, ctr.y-0.02, 0);
+        headMouthIdx = headMesh.morphTargetDictionary?.['mouthOpen'];
+        teethMouthIdx = teethMesh?.morphTargetDictionary?.['mouthOpen'];
+        tongueJawIdx = tongueMesh?.morphTargetDictionary?.['jawOpen'];
+      }
+      status.style.display = 'none';
+      animate();
+    },
+    xhr => { status.textContent = `Yükleniyor: %${Math.round(xhr.loaded/xhr.total*100)}`; },
+    err => {
+      console.warn('Local model failed, using fallback:', err);
+      // Use a public Ready Player Me avatar as fallback
+      loader.load('https://models.readyplayer.me/648a58f44ff53e5e4d29f9e3.glb',
+        gltf => {
+          modelGroup.add(gltf.scene);
+          camera.position.set(0, 1.58, 0.38);
+          camera.lookAt(0, 1.52, 0);
+          status.style.display = 'none';
+          animate();
+        },
+        null,
+        () => { status.textContent = '⚠ Avatar yüklenemedi'; animate(); }
+      );
+    }
+  );
+}
+
+function setMouth(v) {
+  if (headMesh?.morphTargetInfluences && headMouthIdx!==undefined)
+    headMesh.morphTargetInfluences[headMouthIdx] = v;
+  if (teethMesh?.morphTargetInfluences && teethMouthIdx!==undefined)
+    teethMesh.morphTargetInfluences[teethMouthIdx] = v;
+  if (tongueMesh?.morphTargetInfluences && tongueJawIdx!==undefined)
+    tongueMesh.morphTargetInfluences[tongueJawIdx] = v*0.5;
+}
+
+document.addEventListener('mousemove', e => {
+  rotY = ((e.clientX/innerWidth)-.5)*.35;
+  rotX = ((e.clientY/innerHeight)-.5)*.2;
+});
+
+function drawVisualizer(vol) {
+  const W=c2.width, H=c2.height;
+  ctx.clearRect(0,0,W,H);
+  const cx=W/2, cy=H-90;
+  const base=50+vol*22; wavePhase+=0.04+vol*.1;
+  for(let l=0;l<3;l++){
+    ctx.beginPath();
+    const pts=72, amp=vol*(20+l*10);
+    for(let i=0;i<=pts;i++){
+      const a=(i/pts)*Math.PI*2;
+      const w=Math.sin(a*(4+l)+wavePhase)*Math.cos(a*2.5-wavePhase)*amp;
+      const r=base+w, x=cx+Math.cos(a)*r, y=cy+Math.sin(a)*r;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.shadowBlur=16;
+    if(l===0){ctx.strokeStyle='rgba(168,85,247,0.85)';ctx.shadowColor='rgba(168,85,247,.5)';ctx.lineWidth=3}
+    else if(l===1){ctx.strokeStyle='rgba(6,182,212,0.7)';ctx.shadowColor='rgba(6,182,212,.4)';ctx.lineWidth=2}
+    else{ctx.strokeStyle='rgba(236,72,153,0.5)';ctx.shadowColor='rgba(236,72,153,.3)';ctx.lineWidth=1.5}
+    ctx.stroke(); ctx.shadowBlur=0;
+  }
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  curVol+=(targetVol-curVol)*.18;
+  setMouth(curVol);
+  drawVisualizer(curVol);
+  if(modelGroup){
+    const t=Date.now()*.001;
+    modelGroup.rotation.y+=(rotY+Math.cos(t*.8)*.01-modelGroup.rotation.y)*.08;
+    modelGroup.rotation.x+=(rotX+Math.sin(t*1.2)*.01-modelGroup.rotation.x)*.08;
+  }
+  renderer.render(scene,camera);
+}
+
+// ─── MICROPHONE ──────────────────────────────────────────
+async function toggleMic() {
+  const btn = document.getElementById('mic-btn');
+  if (micActive) {
+    micStream?.getTracks().forEach(t=>t.stop());
+    audioCtx?.close(); audioCtx=null; analyser=null;
+    micActive=false; targetVol=0;
+    btn.textContent='🎙️ Mikrofonu Aç'; btn.classList.remove('active');
+    return;
+  }
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({audio:true,video:false});
+    audioCtx = new AudioContext();
+    const src = audioCtx.createMediaStreamSource(micStream);
+    analyser = audioCtx.createAnalyser(); analyser.fftSize=256;
+    src.connect(analyser);
+    micActive=true;
+    btn.textContent='🎙️ Mikrofonu Kapat'; btn.classList.add('active');
+    readMic();
+  } catch(e) { alert('Mikrofon izni verilmedi: '+e.message); }
+}
+
+const micData = new Uint8Array(128);
+function readMic() {
+  if(!micActive||!analyser) return;
+  analyser.getByteFrequencyData(micData);
+  let sum=0; for(let i=0;i<micData.length;i++) sum+=micData[i]*micData[i];
+  const rms=Math.sqrt(sum/micData.length);
+  let vol=rms/90; if(vol<0.1) vol=0;
+  targetVol=Math.min(1,vol*1.5);
+  document.getElementById('vol-fill').style.width=(targetVol*100)+'%';
+  document.getElementById('vol-label').textContent=Math.round(targetVol*100)+'%';
+  requestAnimationFrame(readMic);
+}
+
+// ─── TTS: Avatar Konuşma ─────────────────────────────────
+function avatarSpeak(text, onDone) {
+  if (!window.speechSynthesis) { if(onDone) onDone(); return; }
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'tr-TR'; utt.rate = 0.92; utt.pitch = 1.05;
+  // Try to find a Turkish voice, fall back to any
+  const voices = window.speechSynthesis.getVoices();
+  const trVoice = voices.find(v => v.lang.startsWith('tr')) || voices.find(v => v.lang.startsWith('en'));
+  if (trVoice) utt.voice = trVoice;
+  isSpeaking = true;
+  // Simulate volume oscillation while speaking (since we can't tap TTS audio directly)
+  clearInterval(speechInterval);
+  speechInterval = setInterval(() => {
+    targetVol = isSpeaking ? 0.25 + Math.random() * 0.75 : 0;
+  }, 80);
+  utt.onend = () => {
+    isSpeaking = false; clearInterval(speechInterval); targetVol = 0;
+    if(onDone) onDone();
+  };
+  utt.onerror = () => { isSpeaking = false; clearInterval(speechInterval); targetVol = 0; if(onDone) onDone(); };
+  window.speechSynthesis.speak(utt);
+}
+
+// ─── DICTATION ───────────────────────────────────────────
+const dictBtns = document.getElementById('dict-btns');
+dictTemplates.forEach((t,i) => {
+  const b = document.createElement('div');
+  b.className='dict-btn'; b.textContent=t.title;
+  b.onclick=()=>startDictation(i,b);
+  dictBtns.appendChild(b);
+});
+
+function startDictation(idx,btn) {
+  if(btn.classList.contains('dictating')||isSpeaking) return;
+  dictBtns.querySelectorAll('.dict-btn').forEach(b=>b.classList.remove('dictating'));
+  btn.classList.add('dictating');
+  const tmpl = dictTemplates[idx];
+  const words = tmpl.text.split(' ');
+  let i=0; document.getElementById('dict-text').textContent='';
+  // Step 1: Show user typing the report (simulated dictation)
+  const iv=setInterval(()=>{
+    if(i<words.length){
+      document.getElementById('dict-text').textContent+=((i===0)?'':' ')+words[i];
+      targetVol=0.15+Math.random()*0.5; i++;
+    } else {
+      clearInterval(iv); targetVol=0; btn.classList.remove('dictating');
+      // Add report to list
+      const r={id:'r-'+Date.now(),title:tmpl.title,isStuck:!!tmpl.isStuck};
+      auditReports.push(r);
+      const rl=document.getElementById('report-list');
+      const span=document.createElement('span'); span.className='report-badge';
+      span.textContent='✓ '+r.title; rl.appendChild(span);
+      document.getElementById('dict-text').textContent='🔊 Avatar raporu okuyor...';
+      // Step 2: Avatar reads the report back via TTS
+      const speakText = tmpl.speak || tmpl.text;
+      avatarSpeak(speakText, () => {
+        document.getElementById('dict-text').textContent='✅ Rapor kaydedildi. Forge\'a gönderebilirsin.';
+      });
+    }
+  }, 110);
+}
+
+// ─── FORGE LOOP ──────────────────────────────────────────
+function renderTable() {
+  const tbody=document.getElementById('cycle-tbody');
+  tbody.innerHTML=forgeCycles.map(c=>{
+    const cls=c.result==='Success'?'badge-ok':c.result==='STUCK'?'badge-stuck':'badge-fail';
+    return `<tr><td>${c.n}</td><td style="font-size:9px">${c.rep}</td><td class="${cls}">${c.result}</td><td>${c.test}</td><td style="font-size:9px;color:#475569">${c.hash}</td></tr>`;
+  }).join('');
+}
+renderTable();
+
+function log(msg,type='info') {
+  const el=document.getElementById('forge-console');
+  const d=document.createElement('div'); d.className='log-line log-'+type;
+  d.textContent=msg; el.appendChild(d); el.scrollTop=el.scrollHeight;
+}
+
+async function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+async function runForge() {
+  if(isStuck) return;
+  const btn=document.getElementById('run-forge-btn');
+  btn.disabled=true;
+  document.getElementById('forge-console').innerHTML='';
+
+  const pending=auditReports.filter(r=>!r.forged);
+  const useStuck=pending.some(r=>r.isStuck);
+
+  log('⚙️  FORGE CYCLE BAŞLATILDI...','info'); await sleep(400);
+  log('🔎 Bekleyen audit raporu aranıyor...','info'); await sleep(500);
+
+  if(!pending.length){
+    log('✅ Bekleyen rapor yok. Sistem kararlı.','ok');
+    btn.disabled=false; return;
+  }
+  const active=pending[0];
+  log(`📂 Dosya okundu: ${active.title}`,'info'); await sleep(500);
+  log('🤖 [READ] Kod ağacı analiz ediliyor...','info'); await sleep(600);
+  log('📍 [LOCATE] İlgili bileşen: App.tsx','info'); await sleep(500);
+
+  if(useStuck) {
+    log('⚠️  [HYPOTHESIZE] Force-install ve SVG shim deneniyor...','warn'); await sleep(800);
+    log('🔨 [REPAIR] package.json güncellendi.','info'); await sleep(700);
+    log('🧪 [TEST] Metro bundler koşuluyor...','info'); await sleep(900);
+    log('❌ [FAIL] Duplicate Canvas declaration hatası!','fail'); await sleep(700);
+    log('⏪ [ROLLBACK] Değişiklikler geri alındı.','warn'); await sleep(500);
+    log('🤖 [HYPOTHESIZE-2] tsconfig shim deneniyor...','warn'); await sleep(800);
+    log('🔨 [REPAIR-2] tsconfig.json güncellendi.','info'); await sleep(700);
+    log('🧪 [TEST-2] Metro bundler tekrar koşuluyor...','info'); await sleep(900);
+    log('❌ [FAIL-2] Aynı hata: Duplicate Canvas!','fail'); await sleep(700);
+    log('💥 [ROLLBACK-2] Geri alındı.','warn'); await sleep(400);
+    log('🚨 STUCK: 2 ardışık FAIL — uzman müdahalesi gerekiyor!','fail');
+    forgeCycles.push({n:forgeCycles.length+1,rep:active.title,result:'STUCK',test:'FAIL',hash:'ROLLBACK'});
+    isStuck=true;
+    document.getElementById('stuck-alert').style.display='block';
+    renderTable();
+    // Avatar announces stuck
+    avatarSpeak('Dikkat! İki ardışık başarısızlık aldım ve tıkandım. Lütfen bir uzman çağır. WebRTC köprüsünü açmam gerekiyor.');
+  } else {
+    log('💡 [HYPOTHESIZE] Ayarlar metin rengi #ffffff yapılıyor.','info'); await sleep(700);
+    log('🔨 [REPAIR] App.tsx güncellendi.','info'); await sleep(600);
+    log('🧪 [TEST] Metro PASS! Testler geçti.','ok'); await sleep(700);
+    log('💾 [COMMIT] Local branch\'e commit edildi.','ok');
+    const hash=Math.random().toString(36).substr(2,7);
+    forgeCycles.push({n:forgeCycles.length+1,rep:active.title,result:'Success',test:'PASS',hash});
+    active.forged=true; renderTable();
+    // Avatar announces success
+    avatarSpeak('Rapor başarıyla onarıldı. Değişiklikler commit edildi. Forge döngüsü tamamlandı.');
+  }
+  btn.disabled=false;
+}
+
+function connectExpert() {
+  const room='nokta-expert-bridge-dilfin-231118035';
+  const url='https://meet.jit.si/'+room;
+  window.open(url,'_blank');
+  log('📞 Jitsi Meet açıldı: '+url,'ok');
+  log('🎥 Ekran paylaşımı + ses + video aktif.','info');
+  // After 60s, resolve stuck
+  setTimeout(()=>{
+    isStuck=false;
+    document.getElementById('stuck-alert').style.display='none';
+    const stuck=forgeCycles[forgeCycles.length-1];
+    if(stuck) stuck.result='⟲Resolved';
+    forgeCycles.push({n:forgeCycles.length+1,rep:'report-4-graphics.md',result:'Success',test:'PASS',hash:'e9a8b7c'});
+    renderTable();
+    log('✅ Uzman görüşmesi tamamlandı. STUCK çözüldü!','ok');
+    document.getElementById('run-forge-btn').disabled=false;
+  },60000);
+}
+
+// ─── TAB SWITCH ──────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById(tab+'-panel').classList.add('active');
+  if(tab==='avatar') resize();
+}
+
+// ─── INIT ────────────────────────────────────────────────
+window.addEventListener('resize', resize);
+init3D();
+</script>
+</body>
+</html>

@@ -17,7 +17,11 @@ import {
 } from 'react-native';
 import { Asset } from 'expo-asset';
 import { Audio } from 'expo-av';
-import { WebView } from 'react-native-webview';
+// WebView is only needed on native — import safely
+let WebView: any = null;
+if (Platform.OS !== 'web') {
+  try { WebView = require('react-native-webview').WebView; } catch (_) {}
+}
 import { AVATAR_HTML } from './avatarHTML';
 
 const { width, height } = Dimensions.get('window');
@@ -730,15 +734,18 @@ ${questions.map(q => `* **Soru:** ${q.question}\n  * **Cevap:** ${answers[q.id] 
             {/* Split Screen: Top 60% Avatar Scene, Bottom 40% Dictation Panel */}
             <View style={styles.avatarWebGLContainer}>
               {Platform.OS === 'web' ? (
-                <iframe
-                  srcDoc={AVATAR_HTML}
-                  style={{ width: '100%', height: '100%', border: 'none', background: 'transparent' }}
-                  ref={(f) => {
-                    if (f && f.contentWindow) {
-                      iframeRef.current = f.contentWindow;
+                // Web: use a full-screen iframe via dangerouslySetInnerHTML workaround
+                <View style={{ flex: 1, overflow: 'hidden' as any }}>
+                  {React.createElement('iframe', {
+                    srcDoc: AVATAR_HTML,
+                    style: { width: '100%', height: '100%', border: 'none', background: 'transparent' },
+                    ref: (f: any) => {
+                      if (f && f.contentWindow) {
+                        iframeRef.current = f.contentWindow;
+                      }
                     }
-                  }}
-                />
+                  })}
+                </View>
               ) : (
                 <WebView
                   ref={webViewRef}
