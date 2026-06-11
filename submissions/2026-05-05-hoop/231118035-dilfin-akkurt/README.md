@@ -12,7 +12,7 @@ Track: A
 | | |
 |---|---|
 | 📱 **APK İndir** | [app-release.apk](./app-release.apk) |
-| 🎬 **3 dk Demo Video** | [YouTube Demo İzle](https://youtu.be/KUmjcMYXL9c) |
+| 🎬 **3 dk Demo Video** | [YouTube Demo İzle](https://youtu.be/QYAwrjcg3MU) |
 | 🌐 **Canlı Demo (HTML)** | `python -m http.server 9000` → `localhost:9000/demo.html` |
 | 🤖 **Pull Request** | [seyyah/nokta #321](https://github.com/seyyah/nokta/pull/321) |
 

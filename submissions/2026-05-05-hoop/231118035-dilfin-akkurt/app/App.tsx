@@ -126,7 +126,7 @@ export default function App() {
   useEffect(() => {
     async function getModelAsset() {
       try {
-        const asset = Asset.fromModule(require('./assets/model.glb'));
+        const asset = Asset.fromModule(require('./assets/avatar.glb'));
         await asset.downloadAsync();
         const uri = asset.localUri || asset.uri;
         setModelUri(uri);

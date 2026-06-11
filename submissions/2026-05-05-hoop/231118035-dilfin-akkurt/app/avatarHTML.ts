@@ -377,7 +377,7 @@ export const AVATAR_HTML = `<!DOCTYPE html>
     setTimeout(() => {
       if (!modelLoaded) {
         const urlParams = new URLSearchParams(window.location.search);
-        const modelUrl = urlParams.get('modelUrl') || './model.glb';
+        const modelUrl = urlParams.get('modelUrl') || './avatar.glb';
         loadModel(modelUrl);
       }
     }, 1000);
