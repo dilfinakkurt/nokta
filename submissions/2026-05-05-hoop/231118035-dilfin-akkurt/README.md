@@ -7,14 +7,12 @@ Track: A
 
 ---
 
-## 🔗 Linkler
+## 🔗 Tüm Proje Linkleri
 
-| | |
-|---|---|
-| 📱 **APK İndir** | [app-release.apk](./app-release.apk) |
-| 🎬 **3 dk Demo Video** | [YouTube Demo İzle](https://youtu.be/QYAwrjcg3MU) |
-| 🌐 **Canlı Demo (HTML)** | `python -m http.server 9000` → `localhost:9000/demo.html` |
-| 🤖 **Pull Request** | [seyyah/nokta #321](https://github.com/seyyah/nokta/pull/321) |
+- 🎬 **3 dk Demo Video:** [https://www.youtube.com/watch?v=QYAwrjcg3MU](https://www.youtube.com/watch?v=QYAwrjcg3MU)
+- 📱 **APK Dosyası:** [app-release.apk](./app-release.apk) (Proje klasöründedir)
+- 🤖 **GitHub Pull Request:** [https://github.com/seyyah/nokta/pull/321](https://github.com/seyyah/nokta/pull/321)
+- 🌐 **Canlı Demo (HTML):** `python -m http.server 9000` komutuyla `localhost:9000/demo.html` adresinden çalıştırılabilir.
 
 ---
 
@@ -24,7 +22,7 @@ Track: A
 - `expo-av` mikrofon girişi → RMS/FFT → Web Audio API
 - **OpenAI Voice Mode** estetiğinde 3 katmanlı neon halka animasyonu
 - Sessizlikte solar, konuşunca canlanır (**<200ms latency**)
-- `avaturn.me`'den üretilmiş kendi yüz modeli (`.glb`) → Three.js morph-target lipsync
+- `avaturn.me`'den üretilmiş kendi yüz modeli (`avatar.glb`) → Three.js morph-target lipsync
 - Konuşma **hem kullanıcı sesine hem TTS'e** senkron: avatar raporları kendi sesiyle okur
 
 ### Katman 2 — 🛠️ Forge Ratchet Döngüsü
